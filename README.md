@@ -1,6 +1,6 @@
 # double-evolutionary-algorithm
 Algoritmo evolutivo que ajusta outro algoritmo evolutivo.
-
+https://youtu.be/fFRcXtjQGdY
 
 
 
