@@ -44,22 +44,22 @@ Diminuir taxa de mutação antes de aumentar por umas gerações como ajuste fin
 Ao mutar um cromossomo com N genes, é possível mutar
 1 a N genes em uma mutação. A recomendação é em 50% das mutações, só mutar só um gene. No caso contrário pode ficar impossível alcançar uma combinação boa.
 
-### 2. Crossover com delta
+### 3. Crossover com delta
 Um jeito sofisticado de fazer cross-over é usar delta, a diferença entre os cromossomos parentes. com esse valor temos várias opções de mutação. (pai + delta, pai - delta, mãe + delta, etc...)
 
 
-### 3. Predação do pior indivíduo por um aleatório
+### 4. Predação do pior indivíduo por um aleatório
 Predação é o conceito que elimina o cromossomo com o menor desempenho uma vez por um certo período. No mínimo 0 vezes e no máximo a cada gerações. Predação clássica intensifica a diversidade além da mutação. Com a predação do pior indivíduo, é incluso um indivíduo aleatório na população.
 
-### 4. Predação por síntese
+### 5. Predação por síntese
 Predação por síntese tem um comportamento parecido com o classico mas invés de aumentar a diversidade ele acelera a convergência. Ao eliminar o pior indivíduo, o novo indivíduo é sintetizado com os genes mais populares da população atual, diminuindo a diversidade.
 
-### 5. genocídio ao chegar num dead-end
+### 6. genocídio ao chegar num dead-end
 Genocídio é um conceito usado para poder reiniciar a evolução a partir de zero, quando o melhor da população está travado num ponto por um tempo prolongado.
 
-### 6. AG2 com parâmetros de AG1
+### 7. AG2 com parâmetros de AG1
 O conceito de AG duplo é usar os parâmetros do AG como taxa de mutação, período de predação e métodos de seleção e crossover como genes de um outro AG e rodar outro AG. A função fitness do AG2 é o fitness obtido com o AG1 com os seus genes como parâmetros.
-### 7. Ruidos e Hereditariedade
+### 8. Ruidos e Hereditariedade
 Para simular a realidade mais robustamente precisa se entender os ruidos. As variáveis não codificadas que afetam no fitness são considerados ruidos. Nesse caso um cromossomo não se produz somente um valor exato de fitness. Para ajustar o algoritmo em casos de sortes e desastres, o conceito de hereditariedade guarda os resultados históricos e somente determina o melhor cromossomo com a todo conjunto de valores históricos.
 
 ## desafio (to-do)
