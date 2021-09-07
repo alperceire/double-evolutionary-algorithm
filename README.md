@@ -40,7 +40,7 @@ Com a mutação variada podemos tentar sair do máximo local.
 Aumentar a taxa de mutação quando o melhor fitness não está evoluindo. (travado em máximo local)
 Diminuir taxa de mutação antes de aumentar por umas gerações como ajuste fino.
 
-### 2. sorteio de número de genes
+### 2. Sorteio de número de genes
 Ao mutar um cromossomo com N genes, é possível mutar
 1 a N genes em uma mutação. A recomendação é em 50% das mutações, só mutar só um gene. No caso contrário pode ficar impossível alcançar uma combinação boa.
 
@@ -54,7 +54,7 @@ Predação é o conceito que elimina o cromossomo com o menor desempenho uma vez
 ### 5. Predação por síntese
 Predação por síntese tem um comportamento parecido com o classico mas invés de aumentar a diversidade ele acelera a convergência. Ao eliminar o pior indivíduo, o novo indivíduo é sintetizado com os genes mais populares da população atual, diminuindo a diversidade.
 
-### 6. genocídio ao chegar num dead-end
+### 6. Genocídio ao chegar num dead-end
 Genocídio é um conceito usado para poder reiniciar a evolução a partir de zero, quando o melhor da população está travado num ponto por um tempo prolongado.
 
 ### 7. AG2 com parâmetros de AG1
