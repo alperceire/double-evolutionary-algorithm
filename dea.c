@@ -1,8 +1,10 @@
 // Fork of https://gitlab.com/simoesusp/disciplinas/-/tree/master/SSC0713-Sistemas-Evolutivos-Aplicados-a-Robotica/AG-Grafico
 //
-//
-//
-//
+// Author: Alice
+// Author: Eduardo do Valle Simoes @simoesusp
+// Author: Breno Cunha Queiroz @Brenocq
+// Author: Cho young Lim @alperceire
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -16,15 +18,16 @@
 #define maxx 1000 // inner genes range [0, 1000]
 #define pop 10 // inner EA population
 #define pop2 5 // outer EA population
-#define inner_loop 500 // inner EA max generation
-#define heritage_max 10 // hereditary store array
-#define mutation_rate_squared 50 // per 1000  == 5% of range
-#define predation_mutation_rate 50 // per 1000 == 5% of range
+#define inner_loop 1000 // inner EA max generation
+#define heritage_max 10 // max hereditary store array
+// mutation rate of mutation rate (outer)
+#define mutation_rate_squared 10 // per 1000  == 1% of range
+#define predation_mutation_rate 10 // per 1000 == 1% of range
 
-// variables for inner algorithm
+// ------------- variable for inner ---------------- //
 int gen = 1;
-// matrix of inner cromossome with 5 genes
-double inner_cromossome[pop][5];
+// matrix of inner chromosome with 5 genes
+double inner_chromosome[pop][5];
 double temp[pop][5];
 // array of inner fitness result
 double fit[pop];
@@ -34,7 +37,8 @@ double mean_fit = 0.0;
 int maxi = 0;
 unsigned char flag_fine_tune = 0;
 double ultimate_inner_fit = 0.0;
-double ultimate_inner_cromossome[5];
+double ultimate_inner_chromosome[5];
+double fit_steps[inner_loop / 5] = {0};
 
 float mutation_rate = 2;
 bool bool_tournament = false;
@@ -42,7 +46,7 @@ bool delta_cross_over = true;
 int period_predation = 10;
 int period_synthesis = 10;
 
-// variables for outer algorithm
+// ------------- variable for outer ---------------- //
 int gen2 = 1;
 float gene_mutation_rate[pop2] = {0}; // gene0
 bool gene_selection[pop2] = {true}; // gene1
@@ -64,7 +68,7 @@ void print_result(void);
 void evaluate_fitness(void);
 void populate(void);
 void predation(void);
-double cross_with_delta(double cromox, double cromoy);
+double cross_with_delta(double chromox, double chromoy);
 void elitism(void);
 void elitism2(void);
 void tournament(void);
@@ -97,22 +101,23 @@ int main(int argc, char *argv[]) {
     return(0);
 }
 
-// outer_loop: maximum generation of outer EA
+// int outer_loop: maximum generation of outer EA
 void loop_outer_algorithm(int outer_loop) {
     gen2 = 1;
     populate2();
     evaluate_fitness2();
-    printf("generation, best_RMS_fitness, mean_fitness\n");
-    printf("%d, %f, %f\n", gen2, maxfit2, mean_fit2);
+    // print the outer EA generation status
+    // printf("generation, best_RMS_fitness, mean_fitness\n");
+    // printf("%d, %f, %f\n", gen2, maxfit2, mean_fit2);
     for (int i = 1; i < outer_loop; i++) {
         elitism2();
         evaluate_fitness2();
         gen2++;
-        printf("%d, %f, %f\n", gen2, maxfit2, mean_fit2);
+        // printf("%d, %f, %f\n", gen2, maxfit2, mean_fit2);
     }
 }
 
-// initiate outer cromossomes
+// initiate outer chromosomes
 void populate2(void) {
     for (int i = 0; i < pop2; i++) {
         gene_mutation_rate[i] = (double) (rand() % 100);
@@ -123,7 +128,7 @@ void populate2(void) {
     }
 }
 
-// evalutate fitness of outer cromossomes running inner EA
+// evalutate fitness of outer chromosomes by running inner EA
 void evaluate_fitness2(void) {
     double sum_fit = 0.0;
     double sum_heritage = 0.0;
@@ -136,15 +141,22 @@ void evaluate_fitness2(void) {
         period_synthesis = (int) gene_syntesis[i];
         populate();
         evaluate_fitness();
-        // printf("%d, %f, %f, %f\n", gen, maxfit, mean_fit, mutation_rate);
+        // print the inner EA generation status
+        //printf("%d, %f, %f, %f\n", gen, maxfit, mean_fit, mutation_rate);
         for (int j = 1; j < inner_loop; j++) {
             iterate_evolutionary_algorithm();
+            if ((j % (inner_loop / 5)) == 0) {
+                fit_steps[j/(inner_loop / 5)] = maxfit;
+            }
         }
-        fit2[i] = maxfit;
+        for (int j = 1; j < (inner_loop / 5); j++) {
+            fit2[i] += (fit_steps[j] * 0.1);
+        }
+        fit2[i] += maxfit;
         if (ultimate_inner_fit < maxfit) {
             ultimate_inner_fit = maxfit;
             for (int inj = 0; inj < 5; inj++) {
-                ultimate_inner_cromossome[inj] = inner_cromossome[maxi][inj];
+                ultimate_inner_chromosome[inj] = inner_chromosome[maxi][inj];
             }
         }
         sum_heritage = fit2[i] * fit2[i];
@@ -168,21 +180,29 @@ void evaluate_fitness2(void) {
     }
 }
 
-// populate inner cromossomes
+// populate inner chromosomes
 void populate(void) {
     for (int i = 0; i < pop; i++) {
         for (int j = 0; j < 5; j++) {
-            inner_cromossome[i][j] = (double) (rand() % maxx/500) * 500;
+            inner_chromosome[i][j] = (double) (rand() % maxx);
         }
     }
 }
 
-// evalute inner cromossomes fitness
+// inner fitness function
+double fitness_alt(double x[5]) {
+    double y = 0.1*x[0]*x[1] + 0.1*x[2]*x[3] - 0.1*x[4]*x[0] -0.1*x[2]*x[1];
+    if (y > FLT_MAX) {
+        y == FLT_MAX;
+    }
+    return(y);
+}
+// evalute inner chromosomes fitness
 void evaluate_fitness(void) {
     double sum_fit = 0.0;
 
     for (int i = 0; i < pop; i++) {
-        fit[i] = fitness(inner_cromossome[i]);
+        fit[i] = fitness(inner_chromosome[i]);
         sum_fit += fit[i];
     }
     mean_fit = sum_fit / pop;
@@ -215,6 +235,7 @@ double fitness(double x[5]) {
     return(y);
 }
 
+
 // select crossover and mutate
 void iterate_evolutionary_algorithm(void) {
     if (bool_tournament) {
@@ -235,12 +256,12 @@ void tournament(void) {
 
     for (int i = 0; i < pop; i++) {
         for (int j = 0; j < 5; j++) {
-            temp[i][j] = inner_cromossome[i][j];  // Backup
+            temp[i][j] = inner_chromosome[i][j];  // Backup
         }
     }
     // tournament
     for (int i = 0; i < pop; i++) {
-        if (i == maxi)    // protect the best cromossome
+        if (i == maxi)    // protect the best chromosome
             continue;
 
         // select first parent
@@ -262,31 +283,31 @@ void tournament(void) {
         // Cross_over
         for (int j = 0; j < 5; j++) {
             if (delta_cross_over) {
-                inner_cromossome[i][j] = cross_with_delta(temp[parent1][j], temp[parent2][j]);
+                inner_chromosome[i][j] = cross_with_delta(temp[parent1][j], temp[parent2][j]);
             } else {
-                inner_cromossome[i][j] = (inner_cromossome[parent1][j] + inner_cromossome[parent2][j]) / 2.0;
+                inner_chromosome[i][j] = (inner_chromosome[parent1][j] + inner_chromosome[parent2][j]) / 2.0;
             }
         }
         // mutation
-        // 50% to mute 1 gene
-        // 30% to mute 2 gene
-        // 10% to mute 3 gene
+        // 50% to mutate 1 gene
+        // 30% to mutate 2 gene
+        // 10% to mutate 3 gene
         int percent_mutation = (rand() % 100);
         if (percent_mutation > 50) {
             a = (rand() % 5);
-            inner_cromossome[i][a] = inner_cromossome[i][a] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
-            if (inner_cromossome[i][a] > maxx) inner_cromossome[i][a] = maxx;
-            if (inner_cromossome[i][a] < 0)    inner_cromossome[i][a] = 0.1;
+            inner_chromosome[i][a] = inner_chromosome[i][a] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
+            if (inner_chromosome[i][a] > maxx) inner_chromosome[i][a] = maxx;
+            if (inner_chromosome[i][a] < 0)    inner_chromosome[i][a] = 0.1;
         } else if (percent_mutation > 70) {
             b = (a + (rand() % 4) + 1 % 5);
-            inner_cromossome[i][b] = inner_cromossome[i][b] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
-            if (inner_cromossome[i][b] > maxx) inner_cromossome[i][b] = maxx;
-            if (inner_cromossome[i][b] < 0)    inner_cromossome[i][b] = 0.1;
+            inner_chromosome[i][b] = inner_chromosome[i][b] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
+            if (inner_chromosome[i][b] > maxx) inner_chromosome[i][b] = maxx;
+            if (inner_chromosome[i][b] < 0)    inner_chromosome[i][b] = 0.1;
         } else if (percent_mutation > 90) {
             c = (b + (rand() % 3) + 1 % 5);
-            inner_cromossome[i][c] = inner_cromossome[i][c] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
-            if (inner_cromossome[i][c] > maxx) inner_cromossome[i][c] = maxx;
-            if (inner_cromossome[i][c] < 0)    inner_cromossome[i][c] = 0.1;
+            inner_chromosome[i][c] = inner_chromosome[i][c] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
+            if (inner_chromosome[i][c] > maxx) inner_chromosome[i][c] = maxx;
+            if (inner_chromosome[i][c] < 0)    inner_chromosome[i][c] = 0.1;
         }
     }
 }
@@ -302,64 +323,64 @@ void elitism(void) {
         // Cross_over
         for (int j = 0; j < 5; j++) {
             if (delta_cross_over) {
-                inner_cromossome[i][j] = cross_with_delta(inner_cromossome[i][j], inner_cromossome[maxi][j]);
+                inner_chromosome[i][j] = cross_with_delta(inner_chromosome[i][j], inner_chromosome[maxi][j]);
             } else {
-            inner_cromossome[i][j] = (inner_cromossome[i][j] + inner_cromossome[maxi][j])/ 2.0;
+            inner_chromosome[i][j] = (inner_chromosome[i][j] + inner_chromosome[maxi][j])/ 2.0;
             }
         }
 
         // mutation
-        // 50% to mute 3 gene
-        // 30% to mute 2 gene
-        // 10% to mute 3 gene
+        // 50% to mutate 1 gene
+        // 30% to mutate 2 gene
+        // 10% to mutate 3 gene
         int percent_mutation = (rand() % 100);
         if (percent_mutation > 50) {
             a = (rand() % 5);
-            inner_cromossome[i][a] = inner_cromossome[i][a] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
-            if (inner_cromossome[i][a] > maxx) inner_cromossome[i][a] = maxx;
-            if (inner_cromossome[i][a] < 0)    inner_cromossome[i][a] = 0.1;
+            inner_chromosome[i][a] = inner_chromosome[i][a] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
+            if (inner_chromosome[i][a] > maxx) inner_chromosome[i][a] = maxx;
+            if (inner_chromosome[i][a] < 0)    inner_chromosome[i][a] = 0.1;
         } else if (percent_mutation > 70) {
             b = (a + (rand() % 4) + 1 % 5);
-            inner_cromossome[i][b] = inner_cromossome[i][b] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
-            if (inner_cromossome[i][b] > maxx) inner_cromossome[i][b] = maxx;
-            if (inner_cromossome[i][b] < 0)    inner_cromossome[i][b] = 0.1;
+            inner_chromosome[i][b] = inner_chromosome[i][b] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
+            if (inner_chromosome[i][b] > maxx) inner_chromosome[i][b] = maxx;
+            if (inner_chromosome[i][b] < 0)    inner_chromosome[i][b] = 0.1;
         } else if (percent_mutation > 90) {
             c = (b + (rand() % 3) + 1 % 5);
-            inner_cromossome[i][c] = inner_cromossome[i][c] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
-            if (inner_cromossome[i][c] > maxx) inner_cromossome[i][c] = maxx;
-            if (inner_cromossome[i][c] < 0)    inner_cromossome[i][c] = 0.1;
+            inner_chromosome[i][c] = inner_chromosome[i][c] + ((double) (rand() % maxx)-maxx/2)*mutation_rate*2/1000.0f;
+            if (inner_chromosome[i][c] > maxx) inner_chromosome[i][c] = maxx;
+            if (inner_chromosome[i][c] < 0)    inner_chromosome[i][c] = 0.1;
         }
     }
 }
 
 // cross over with delta
-double cross_with_delta(double cromox, double cromoy) {
+double cross_with_delta(double chromox, double chromoy) {
     int switch_delta;
     float delta;
     double offspring = 0.0;
-    delta = cromox + cromoy / 2.0;
+    delta = chromox + chromoy / 2.0;
     switch_delta = rand() % 7;
     switch (switch_delta) {
         case 0:
             offspring = delta;
             break;
         case 1:
-            offspring = cromox;
+            offspring = chromox;
             break;
         case 2:
-            offspring = cromoy;
+            offspring = chromoy;
             break;
         case 3:
-            offspring = cromox - delta;
+            offspring = chromox - delta;
             break;
         case 4:
-            offspring = cromoy - delta;
+            offspring = chromoy - delta;
             break;
         case 5:
-            offspring = cromox + delta;
+            offspring = chromox + delta;
             break;
         case 6:
-            offspring = cromoy + delta;
+            offspring = chromoy + delta;
             break;
     }
     if (offspring < 0) offspring = 0.01;
@@ -379,11 +400,19 @@ void predation(void) {
             }
         }
         for (int j = 0; j < 5; j++) {
-            inner_cromossome[worst_index][j] = (double) (rand() % maxx);
+            inner_chromosome[worst_index][j] = (double) (rand() % maxx);
         }
     }
 }
 
+// Pseudo-synthesize:
+// The concept of synthesizing predation is to take the most common gene
+// from the entire population.
+// However, in this project, all five genes from the inner EA are
+// floating-point numbers, and it is almost impossible to have a "common gene"
+// since every gene most certainly will have a unique value.
+// The pseudo-synthesize will address this issue by taking the average
+// from the entire population instead of the most common.
 void pseudo_synthesize(void) {
     if(gen % period_synthesis == 0) {
         int worst_index = 0;
@@ -397,22 +426,31 @@ void pseudo_synthesize(void) {
         for (int j = 0; j < 5; j++) {
             double gene_mean[5] = {0};
             for (int k = 0; k < pop; k++) {
-                gene_mean[j] += inner_cromossome[k][j];
+                gene_mean[j] += inner_chromosome[k][j];
             }
-            inner_cromossome[worst_index][j] = (double) gene_mean[j] / pop;
+            inner_chromosome[worst_index][j] = (double) gene_mean[j] / pop;
         }
     }
 }
 
+// repolulate or "genocide":
+// with a proper trigger of stagnation, eradicate the population
+// except for the most successful chromosome.
 void repopulate(void) {
     for (int i = 0; i < pop; i++) {
         if(i!=maxi) {
             for (int j = 0; j < 5; j++)
-                inner_cromossome[i][j] = (double) (rand() % maxx);
+                inner_chromosome[i][j] = (double) (rand() % maxx);
         }
     }
 }
 
+// evaluate-mutation:
+// evaluate the progress of the past five generations and verify the stagnation.
+// With the stagnation, make two generations of "fine-tuning"
+// by narrowing the mutation rate. After two generations,
+// the next generations will expand the mutation rate to
+// explore ranges in the gene farther from the most successful chromosome.
 void evalutate_mutation(void) {
     if((bestInd[4] - bestInd[0] < 0.00001) && (flag_fine_tune < 2)) {
         mutation_rate = mutation_rate / 10;
@@ -475,7 +513,7 @@ void elitism2(void) {
 void print_result(void) {
     printf("best fitness: %f\n", ultimate_inner_fit);
     for (int i = 0; i < 5; i++) {
-        printf("best x[%d]: %f\n", i, ultimate_inner_cromossome[i]);
+        printf("best x[%d]: %f\n", i, ultimate_inner_chromosome[i]);
     }
     printf("best mutation rate: %f%%\n", (gene_mutation_rate[maxi2]/10));
     if (gene_selection[maxi2] == 0) {
